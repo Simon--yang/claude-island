@@ -88,7 +88,7 @@ struct ClaudeInstancesView: View {
     // MARK: - Actions
 
     private func focusSession(_ session: SessionState) {
-        guard session.isInTmux else { return }
+        guard session.isInMultiplexer else { return }
 
         Task {
             if let pid = session.pid {
@@ -237,7 +237,7 @@ struct InstanceRow: View {
                     // Go to Terminal button (only if yabai available)
                     if isYabaiAvailable {
                         TerminalButton(
-                            isEnabled: session.isInTmux,
+                            isEnabled: session.isInMultiplexer,
                             onTap: { onFocus() }
                         )
                     }
@@ -257,8 +257,8 @@ struct InstanceRow: View {
                         onChat()
                     }
 
-                    // Focus icon (only for tmux instances with yabai)
-                    if session.isInTmux && isYabaiAvailable {
+                    // Focus icon (only for multiplexer instances with yabai)
+                    if session.isInMultiplexer && isYabaiAvailable {
                         IconButton(icon: "eye") {
                             onFocus()
                         }

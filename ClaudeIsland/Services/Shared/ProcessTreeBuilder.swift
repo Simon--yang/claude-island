@@ -71,6 +71,40 @@ struct ProcessTreeBuilder: Sendable {
         return false
     }
 
+    /// Check if a process has zellij in its parent chain
+    nonisolated func isInZellij(pid: Int, tree: [Int: ProcessInfo]) -> Bool {
+        var current = pid
+        var depth = 0
+
+        while current > 1 && depth < 20 {
+            guard let info = tree[current] else { break }
+            if info.command.lowercased().contains("zellij") {
+                return true
+            }
+            current = info.ppid
+            depth += 1
+        }
+
+        return false
+    }
+
+    /// Try to read ZELLIJ_SESSION_NAME from a process's environment
+    nonisolated func findZellijSessionName(pid: Int) -> String? {
+        guard let output = ProcessExecutor.shared.runSyncOrNil(
+            "/bin/ps", arguments: ["-p", String(pid), "-Eww", "-o", "command="]
+        ) else {
+            return nil
+        }
+
+        guard let range = output.range(of: "ZELLIJ_SESSION_NAME=") else {
+            return nil
+        }
+
+        let afterPrefix = String(output[range.upperBound...])
+        let sessionName = afterPrefix.components(separatedBy: .whitespaces).first ?? ""
+        return sessionName.isEmpty ? nil : sessionName
+    }
+
     /// Walk up the process tree to find the terminal app PID
     nonisolated func findTerminalPid(forProcess pid: Int, tree: [Int: ProcessInfo]) -> Int? {
         var current = pid

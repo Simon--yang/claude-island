@@ -353,14 +353,14 @@ struct ChatView: View {
 
     // MARK: - Input Bar
 
-    /// Can send messages only if session is in tmux
+    /// Can send messages only if session is in a terminal multiplexer (tmux or zellij)
     private var canSendMessages: Bool {
-        session.isInTmux && session.tty != nil
+        (session.isInTmux && session.tty != nil) || session.isInZellij
     }
 
     private var inputBar: some View {
         HStack(spacing: 10) {
-            TextField(canSendMessages ? "Message Claude..." : "Open Claude Code in tmux to enable messaging", text: $inputText)
+            TextField(canSendMessages ? "Message Claude..." : "Open Claude Code in tmux or zellij to enable messaging", text: $inputText)
                 .textFieldStyle(.plain)
                 .font(.system(size: 13))
                 .foregroundColor(canSendMessages ? .white : .white.opacity(0.4))
@@ -422,7 +422,7 @@ struct ChatView: View {
     /// Bar for interactive tools like AskUserQuestion that need terminal input
     private var interactivePromptBar: some View {
         ChatInteractivePromptBar(
-            isInTmux: session.isInTmux,
+            isInMultiplexer: session.isInMultiplexer,
             onGoToTerminal: { focusTerminal() }
         )
     }
@@ -479,11 +479,13 @@ struct ChatView: View {
     }
 
     private func sendToSession(_ text: String) async {
-        guard session.isInTmux else { return }
-        guard let tty = session.tty else { return }
-
-        if let target = await findTmuxTarget(tty: tty) {
-            _ = await ToolApprovalHandler.shared.sendMessage(text, to: target)
+        if session.isInTmux {
+            guard let tty = session.tty else { return }
+            if let target = await findTmuxTarget(tty: tty) {
+                _ = await ToolApprovalHandler.shared.sendMessage(text, to: target)
+            }
+        } else if session.isInZellij {
+            _ = await ZellijController.shared.sendMessage(text, sessionName: session.zellijSessionName)
         }
     }
 
@@ -983,7 +985,7 @@ struct InterruptedMessageView: View {
 
 /// Bar for interactive tools like AskUserQuestion that need terminal input
 struct ChatInteractivePromptBar: View {
-    let isInTmux: Bool
+    let isInMultiplexer: Bool
     let onGoToTerminal: () -> Void
 
     @State private var showContent = false
@@ -1008,7 +1010,7 @@ struct ChatInteractivePromptBar: View {
 
             // Terminal button on right (similar to Allow button)
             Button {
-                if isInTmux {
+                if isInMultiplexer {
                     onGoToTerminal()
                 }
             } label: {
@@ -1018,10 +1020,10 @@ struct ChatInteractivePromptBar: View {
                     Text("Terminal")
                         .font(.system(size: 13, weight: .medium))
                 }
-                .foregroundColor(isInTmux ? .black : .white.opacity(0.4))
+                .foregroundColor(isInMultiplexer ? .black : .white.opacity(0.4))
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-                .background(isInTmux ? Color.white.opacity(0.95) : Color.white.opacity(0.1))
+                .background(isInMultiplexer ? Color.white.opacity(0.95) : Color.white.opacity(0.1))
                 .clipShape(Capsule())
             }
             .buttonStyle(.plain)

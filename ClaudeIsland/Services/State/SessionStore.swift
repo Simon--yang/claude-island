@@ -129,6 +129,10 @@ actor SessionStore {
         if let pid = event.pid {
             let tree = ProcessTreeBuilder.shared.buildTree()
             session.isInTmux = ProcessTreeBuilder.shared.isInTmux(pid: pid, tree: tree)
+            session.isInZellij = ProcessTreeBuilder.shared.isInZellij(pid: pid, tree: tree)
+            if session.isInZellij && session.zellijSessionName == nil {
+                session.zellijSessionName = ProcessTreeBuilder.shared.findZellijSessionName(pid: pid)
+            }
         }
         if let tty = event.tty {
             session.tty = tty.replacingOccurrences(of: "/dev/", with: "")

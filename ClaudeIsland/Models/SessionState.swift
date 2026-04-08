@@ -22,6 +22,11 @@ struct SessionState: Equatable, Identifiable, Sendable {
     var pid: Int?
     var tty: String?
     var isInTmux: Bool
+    var isInZellij: Bool
+    var zellijSessionName: String?
+
+    /// True when running inside any terminal multiplexer (tmux or zellij)
+    var isInMultiplexer: Bool { isInTmux || isInZellij }
 
     // MARK: - State Machine
 
@@ -71,6 +76,8 @@ struct SessionState: Equatable, Identifiable, Sendable {
         pid: Int? = nil,
         tty: String? = nil,
         isInTmux: Bool = false,
+        isInZellij: Bool = false,
+        zellijSessionName: String? = nil,
         phase: SessionPhase = .idle,
         chatItems: [ChatHistoryItem] = [],
         toolTracker: ToolTracker = ToolTracker(),
@@ -89,6 +96,8 @@ struct SessionState: Equatable, Identifiable, Sendable {
         self.pid = pid
         self.tty = tty
         self.isInTmux = isInTmux
+        self.isInZellij = isInZellij
+        self.zellijSessionName = zellijSessionName
         self.phase = phase
         self.chatItems = chatItems
         self.toolTracker = toolTracker
