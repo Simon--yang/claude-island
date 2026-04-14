@@ -222,6 +222,13 @@ struct InstanceRow: View {
                         .foregroundColor(.white.opacity(0.4))
                         .lineLimit(1)
                 }
+
+                if let zellijName = session.zellijSessionName {
+                    Text(zellijName)
+                        .font(.system(size: 10, weight: .medium, design: .monospaced))
+                        .foregroundColor(.white.opacity(0.25))
+                        .lineLimit(1)
+                }
             }
 
             Spacer(minLength: 0)
